@@ -3,3 +3,5 @@ build/
 
 blocks.db
 badger/
+
+*.tar.gz
