@@ -3,13 +3,10 @@ module block_heights
 go 1.15
 
 require (
-	bitbucket.org/simon_ordish/cryptolib v1.0.44 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
-	github.com/btcsuite/btcd v0.21.0-beta // indirect
 	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
-	github.com/go-zeromq/zmq4 v0.13.0 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
