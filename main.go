@@ -113,6 +113,7 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 		block.EndHash = hash
 		block.BlockCount++
 		block.Difficulty += header.Difficulty
+		block.TXCount += header.TXCount
 
 		nextHash = header.NextBlockHash
 	} else {
@@ -137,6 +138,7 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 		block.EndHash = header.Hash
 		block.EndHeight = header.Height
 		block.BlockCount = 1
+		block.TXCount = header.TXCount
 		block.Difficulty = header.Difficulty
 
 		nextHash = header.NextBlockHash
@@ -171,12 +173,14 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 			block.BlockCount = 0
 			block.Difficulty = 0
 			block.FXRate = 0
+			block.TXCount = 0
 		}
 
 		block.EndHash = header.Hash
 		block.EndHeight = header.Height
 		block.BlockCount++
 		block.Difficulty += header.Difficulty
+		block.TXCount += header.TXCount
 
 		nextHash = header.NextBlockHash
 	}

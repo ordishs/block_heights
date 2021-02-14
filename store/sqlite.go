@@ -28,6 +28,7 @@ func NewSQLite() (*sqlite, error) {
     ,block_count INTEGER NOT NULL
     ,difficulty DOUBLE NOT NULL
     ,fxrate DOUBLE NOT NULL
+    ,tx_count INTEGER NOT NULL
     ,PRIMARY KEY (datenum, coin)
     );
   `)
@@ -57,8 +58,10 @@ func (s *sqlite) StoreBlock(b *BlockData) error {
     ,block_count
     ,difficulty
     ,fxrate
+    ,tx_count
     ) VALUES (
      ?
+    ,?
     ,?
     ,?
     ,?
@@ -75,7 +78,7 @@ func (s *sqlite) StoreBlock(b *BlockData) error {
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(b.DateNum, b.Coin, b.StartHeight, b.StartHash, b.EndHeight, b.EndHash, b.BlockCount, b.Difficulty, b.FXRate)
+	_, err = stmt.Exec(b.DateNum, b.Coin, b.StartHeight, b.StartHash, b.EndHeight, b.EndHash, b.BlockCount, b.Difficulty, b.FXRate, b.TXCount)
 	if err != nil {
 		sqlite3Err, ok := err.(sqlite3.Error)
 		if ok && sqlite3Err.Code == 19 {
@@ -100,6 +103,7 @@ func (s *sqlite) GetLastBlock(coin string) (*BlockData, error) {
     ,block_count
     ,difficulty
     ,fxrate
+    ,tx_count
     FROM blocks
     WHERE coin = $1
     ORDER BY datenum DESC
@@ -107,7 +111,7 @@ func (s *sqlite) GetLastBlock(coin string) (*BlockData, error) {
 
 	var d BlockData
 
-	switch err := row.Scan(&d.DateNum, &d.Coin, &d.StartHeight, &d.StartHash, &d.EndHeight, &d.EndHash, &d.BlockCount, &d.Difficulty, &d.FXRate); err {
+	switch err := row.Scan(&d.DateNum, &d.Coin, &d.StartHeight, &d.StartHash, &d.EndHeight, &d.EndHash, &d.BlockCount, &d.Difficulty, &d.FXRate, &d.TXCount); err {
 	case sql.ErrNoRows:
 		d.Coin = coin
 		return &d, nil

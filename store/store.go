@@ -18,6 +18,7 @@ type BlockData struct {
 	BlockCount  uint16
 	Difficulty  float64
 	FXRate      float64
+	TXCount     uint32
 }
 
 func (b *BlockData) String() string {
