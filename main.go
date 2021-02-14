@@ -4,11 +4,14 @@ import (
 	"block_heights/fx"
 	"block_heights/store"
 	"log"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/ordishs/go-bitcoin"
+
+	_ "net/http/pprof"
 )
 
 // Name used by build script for the binaries. (Please keep on single line)
@@ -21,6 +24,10 @@ const version = "0.0.0"
 var commit string
 
 func main() {
+
+	go func() {
+		log.Fatalf("%v", http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	stores := initDatabases()
 	bitcoins := initBitcoins()
