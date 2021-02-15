@@ -13,7 +13,7 @@ var rates map[uint32]float64
 
 func init() {
 
-	rates := make(map[uint32]float64)
+	rates = make(map[uint32]float64)
 
 	csvfile, err := os.Open("./fx/bsv_prices_daily.csv")
 	if err != nil {
@@ -39,6 +39,9 @@ func init() {
 		}
 
 		rate, err := strconv.ParseFloat(record[1], 64)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		rates[uint32(datenum)] = rate
 	}
