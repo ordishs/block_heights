@@ -1,15 +1,13 @@
 package main
 
 import (
+	"block_heights/blockchain"
 	"block_heights/fx"
 	"block_heights/store"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
 	"sync"
-	"time"
-
-	"github.com/ordishs/go-bitcoin"
 
 	_ "net/http/pprof"
 )
@@ -30,11 +28,11 @@ func main() {
 	}()
 
 	stores := initDatabases()
-	bitcoins := initBitcoins()
+	sources := initSources()
 
 	var wg sync.WaitGroup
 
-	for coin, bitcoin := range bitcoins {
+	for coin, bitcoin := range sources {
 		wg.Add(1)
 		go processBlocks(&wg, coin, bitcoin, stores)
 	}
@@ -73,20 +71,37 @@ func initDatabases() []store.BlockStore {
 	return stores
 }
 
-func initBitcoins() map[string]*bitcoin.Bitcoind {
-	bitcoins := make(map[string]*bitcoin.Bitcoind, 0)
+func initSources() map[string]blockchain.BlockchainSource {
+	bitcoins := make(map[string]blockchain.BlockchainSource)
 
-	b, err := bitcoin.New("localhost", 8332, "simon", "password", false)
-	if err != nil {
-		log.Fatalf("Could not connect to bitcoin: %v", err)
+	if len(os.Args) < 2 {
+		log.Fatal("You must specify BSTORE or BITCOIND")
 	}
 
-	bitcoins["BSV"] = b
+	switch os.Args[1] {
+	case "BITCOIND":
+		b, err := blockchain.NewBitcoind()
+		if err != nil {
+			log.Fatalf("Could not connect to bitcoin: %v", err)
+		}
+		bitcoins["BSV"] = b
+		log.Println("Using BITCOIND")
+	case "BSTORE":
+
+		b, err := blockchain.NewBStore()
+		if err != nil {
+			log.Fatalf("Could not connect to bstore: %v", err)
+		}
+		bitcoins["BSV"] = b
+		log.Println("Using BSTORE")
+	default:
+		log.Fatal("You must specify BSTORE or BITCOIND")
+	}
 
 	return bitcoins
 }
 
-func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores []store.BlockStore) {
+func processBlocks(wg *sync.WaitGroup, coin string, b blockchain.BlockchainSource, stores []store.BlockStore) {
 	defer wg.Done()
 
 	log.Printf("Starting goroutine for %s...", coin)
@@ -110,17 +125,15 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 		if err != nil {
 			log.Fatalf("Could not get block header: %v", err)
 		}
-		dateNum, err := convertTimeToDateNum(header.MedianTime)
-		if err != nil {
-			log.Fatalf("Could not read time: %v", err)
-		}
-		block.DateNum = dateNum
+
+		block.DateNum = header.DateNum
 		block.Coin = coin
 		block.StartHash = hash
 		block.EndHash = hash
 		block.BlockCount++
+		block.Size += header.Size
 		block.Difficulty += header.Difficulty
-		block.TXCount += header.TXCount
+		block.TXCount += uint32(header.NumTx)
 
 		nextHash = header.NextBlockHash
 	} else {
@@ -134,18 +147,15 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 			log.Fatalf("Could not get block header: %v", err)
 		}
 
-		dateNum, err := convertTimeToDateNum(header.MedianTime)
-		if err != nil {
-			log.Fatalf("Could not read time: %v", err)
-		}
-		block.DateNum = dateNum
+		block.DateNum = header.DateNum
 		block.Coin = coin
 		block.StartHash = header.Hash
 		block.StartHeight = header.Height
 		block.EndHash = header.Hash
 		block.EndHeight = header.Height
 		block.BlockCount = 1
-		block.TXCount = header.TXCount
+		block.Size = header.Size
+		block.TXCount = uint32(header.NumTx)
 		block.Difficulty = header.Difficulty
 
 		nextHash = header.NextBlockHash
@@ -157,12 +167,7 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 			log.Fatalf("Could not get block header: %v", err)
 		}
 
-		dateNum, err := convertTimeToDateNum(header.MedianTime)
-		if err != nil {
-			log.Fatalf("Could not read time: %v", err)
-		}
-
-		if block.DateNum != dateNum {
+		if block.DateNum != header.DateNum {
 			block.FXRate = fx.GetRate(block.DateNum)
 
 			for _, s := range stores {
@@ -174,32 +179,24 @@ func processBlocks(wg *sync.WaitGroup, coin string, b *bitcoin.Bitcoind, stores 
 
 			log.Println(block)
 
-			block.DateNum = dateNum
+			block.DateNum = header.DateNum
 			block.StartHash = header.Hash
 			block.StartHeight = header.Height
 			block.BlockCount = 0
 			block.Difficulty = 0
 			block.FXRate = 0
 			block.TXCount = 0
+			block.Size = 0
 		}
 
 		block.EndHash = header.Hash
 		block.EndHeight = header.Height
 		block.BlockCount++
 		block.Difficulty += header.Difficulty
-		block.TXCount += header.TXCount
+		block.TXCount += uint32(header.NumTx)
+		block.Size += header.Size
 
 		nextHash = header.NextBlockHash
 	}
 
-}
-
-func convertTimeToDateNum(t uint64) (uint32, error) {
-	tm := time.Unix(int64(t), 0).Format("20060102")
-	u, err := strconv.ParseUint(tm, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return uint32(u), nil
 }

@@ -3,6 +3,8 @@ module block_heights
 go 1.15
 
 require (
+	bitbucket.org/Taal_Orchestrator/common v1.1.2
+	bitbucket.org/Taal_Orchestrator/proto v1.0.25
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/dgraph-io/badger/v3 v3.2011.1
@@ -18,6 +20,7 @@ require (
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
+	google.golang.org/grpc v1.33.2
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
